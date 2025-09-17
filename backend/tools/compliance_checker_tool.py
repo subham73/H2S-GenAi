@@ -1,6 +1,6 @@
 from langchain_core.tools import BaseTool
 from typing import List, Dict
-from core.data_models import HEALTHCARE_REGULATIONS
+from backend.core.data_models import HEALTHCARE_REGULATIONS
 
 class ComplianceCheckerTool(BaseTool):
     name: str = "compliance_checker"

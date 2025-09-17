@@ -1,6 +1,15 @@
 import asyncio
-from core.data_models import QAState
-from core.workflow import create_qa_workflow, export_test_cases_to_json, generate_traceability_matrix
+from backend.core.data_models import QAState
+from backend.core.workflow import create_qa_workflow, export_test_cases_to_json, generate_traceability_matrix
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+# import vertexai
+# vertexai.init(
+#     project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+#     location=os.getenv("VERTEX_LOCATION", "us-central1")
+# )
 
 
 async def main():

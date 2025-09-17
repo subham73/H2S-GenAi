@@ -60,8 +60,7 @@ class TestCase(BaseModel):
     regulatory_tags: Optional[List[str]] = Field(default_factory=list, description="Applicable regulatory standards or tags")
     traceability_id: Optional[str] = Field("", description="Traceability reference to requirements or features")
 
-@dataclass
-class ComplianceResult:
+class ComplianceResult(BaseModel):
     test_case_id: str
     regulation: str
     compliance_status: str
@@ -69,19 +68,21 @@ class ComplianceResult:
     recommendations: List[str]
     risk_level: str
 
-@dataclass
-class QAState: # TODO : change it to pydantic model later
-    requirement: str = "" 
+class QAState(BaseModel):
+    requirement: str = ""
     requirement_analysis: Optional[RequirementAnalysis] = None
-    regulatory_requirements: List[str] = field(default_factory=list)
+    regulatory_requirements: List[str] = Field(default_factory=list)
     current_step: str = "orchestration"
-    messages: List[BaseMessage] = field(default_factory=list)
-    test_cases: List[TestCase] = field(default_factory=list)
-    compliance_results: List[ComplianceResult] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
+    messages: List[BaseMessage] = Field(default_factory=list)
+    test_cases: List[TestCase] = Field(default_factory=list)
+    compliance_results: List[ComplianceResult] = Field(default_factory=list)
+    errors: List[str] = Field(default_factory=list)
     workflow_complete: bool = False
-    workflow_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = field(default_factory=datetime.now)
+    workflow_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        arbitrary_types_allowed = True  # Needed for BaseMessage from langchain_core
 
 
 HEALTHCARE_REGULATIONS = {
@@ -125,4 +126,89 @@ HEALTHCARE_REGULATIONS = {
             "Data protection impact assessment"
         ]
     }
+}
+
+
+from datetime import datetime
+from uuid import uuid4
+
+sample_qastate = {
+    "requirement": "The system shall allow patients to book, reschedule, and cancel appointments with automated reminders.",
+    "requirement_analysis": {
+        "functional_areas": {
+            "modules": ["Appointment Management", "Notification Service"],
+            "workflows": ["Booking Workflow", "Cancellation Workflow"],
+            "use_cases": ["Book appointment", "Cancel appointment", "Reschedule appointment"]
+        },
+        "security_considerations": {
+            "data_protection": "Encrypt patient data at rest and in transit",
+            "user_authentication": "OAuth2 with MFA",
+            "authorization": "Role-based access control",
+            "access_control": "Granular permissions per module",
+            "logging": "Audit logs for all booking changes",
+            "incident_detection": "Automated anomaly detection on booking patterns"
+        },
+        "compliance_requirements": {
+            "regulations": ["HIPAA", "FDA"],
+            "compliance_measures": {
+                "HIPAA": "Ensure PHI is encrypted and access logged",
+                "FDA": "Maintain audit trails for all scheduling changes"
+            },
+            "auditability": "All actions timestamped and traceable"
+        },
+        "data_handling": {
+            "data_entities": ["Patient", "Appointment", "Doctor", "Room"],
+            "data_collection": "Collected via secure web forms",
+            "data_storage": "Encrypted database with daily backups",
+            "data_transmission": "TLS 1.3 for all API calls",
+            "retention_policy": "Retain appointment data for 7 years",
+            "backup_policy": "Daily incremental backups, weekly full backups",
+            "deletion_policy": "Secure deletion after retention period"
+        },
+        "other_critical_aspects": {
+            "interoperability": "HL7/FHIR integration with EMR",
+            "integration": "Integrates with SMS and email gateways",
+            "performance": "Under 2s response time for booking actions",
+            "scalability": "Supports up to 10,000 concurrent users",
+            "usability": "Mobile-first responsive design",
+            "monitoring": "Real-time health checks and alerting"
+        }
+    },
+    "regulatory_requirements": ["HIPAA", "FDA"],
+    "current_step": "compliance_check",
+    "messages": [],  # Could contain LangChain BaseMessage objects
+    "test_cases": [
+        {
+            "id": "TC-001",
+            "title": "Book Appointment - Happy Path",
+            "description": "Verify that a patient can successfully book an appointment.",
+            "preconditions": ["User is logged in", "Doctor is available"],
+            "steps": [
+                "Navigate to booking page",
+                "Select doctor and time slot",
+                "Confirm booking"
+            ],
+            "expected_results": [
+                "Booking confirmation displayed",
+                "Reminder email sent"
+            ],
+            "priority": "High",
+            "regulatory_tags": ["HIPAA"],
+            "traceability_id": "REQ-001"
+        }
+    ],
+    "compliance_results": [
+        {
+            "test_case_id": "TC-001",
+            "regulation": "HIPAA",
+            "compliance_status": "Compliant",
+            "violations": [],
+            "recommendations": [],
+            "risk_level": "Low"
+        }
+    ],
+    "errors": [],
+    "workflow_complete": True,
+    "workflow_id": str(uuid4()),
+    "created_at": datetime.now().isoformat()
 }

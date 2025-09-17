@@ -1,0 +1,34 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from backend.core.data_models import QAState, sample_qastate
+from backend.core.workflow import create_qa_workflow
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
+app = FastAPI()
+
+class RequirementRequest(BaseModel):
+    requirement: str
+    regulatory_requirements: list[str]
+
+@app.post("/run-workflow")
+async def run_workflow(req: RequirementRequest):
+    try:
+        initial_state = QAState(
+            requirement=req.requirement,
+            regulatory_requirements=req.regulatory_requirements
+        )
+        # workflow = create_qa_workflow()
+        # final_state = await workflow.ainvoke(initial_state)
+        dummy_final_state = QAState(**sample_qastate)
+        return dummy_final_state.model_dump()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to the QA Automation API"}

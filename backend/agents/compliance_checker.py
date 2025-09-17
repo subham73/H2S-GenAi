@@ -1,5 +1,5 @@
-from tools.compliance_checker_tool import ComplianceCheckerTool
-from core.data_models import QAState, ComplianceResult
+from backend.tools.compliance_checker_tool import ComplianceCheckerTool
+from backend.core.data_models import QAState, ComplianceResult
 from langchain_core.messages import HumanMessage, AIMessage
 from pprint import pprint
 class ComplianceCheckAgent:

@@ -1,6 +1,6 @@
 import uuid
 from langchain_core.tools import BaseTool
-from core.data_models import HEALTHCARE_REGULATIONS 
+from backend.core.data_models import HEALTHCARE_REGULATIONS 
 from typing import List, Dict
 
 class TestCaseGeneratorTool(BaseTool):

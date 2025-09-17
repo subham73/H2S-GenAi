@@ -1,6 +1,6 @@
 import json
 import re
-from core.data_models import QAState, ComplianceResult, RequirementAnalysis
+from backend.core.data_models import QAState, ComplianceResult, RequirementAnalysis
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from typing import List, Dict, Optional
 from pprint import pprint

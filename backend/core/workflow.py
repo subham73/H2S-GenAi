@@ -1,9 +1,9 @@
 import json
 from typing import Dict
-from agents.compliance_checker import ComplianceCheckAgent
-from agents.orchestrator import OrchestratorAgent
-from agents.testcase_generator import TestCaseGeneratorAgent
-from core.data_models import QAState
+from backend.agents.compliance_checker import ComplianceCheckAgent
+from backend.agents.orchestrator import OrchestratorAgent
+from backend.agents.testcase_generator import TestCaseGeneratorAgent
+from backend.core.data_models import QAState
 # from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import ChatVertexAI
 from langgraph.graph import StateGraph, END
@@ -81,6 +81,7 @@ def export_test_cases_to_json(state: QAState) -> str:
 def create_qa_workflow():
     llm = ChatVertexAI(
         model="gemini-2.5-flash", 
+        temperature=0.2,
     )                              
     orchestrator = OrchestratorAgent(llm)
     test_generator = TestCaseGeneratorAgent(llm)

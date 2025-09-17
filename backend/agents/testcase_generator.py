@@ -1,8 +1,8 @@
 from pydantic import ValidationError, Field
-from core.data_models import QAState, ComplianceResult, RequirementAnalysis
+from backend.core.data_models import QAState, ComplianceResult, RequirementAnalysis
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from tools.testcase_generator_tool import TestCaseGeneratorTool
-from core.data_models import TestCase
+from backend.tools.testcase_generator_tool import TestCaseGeneratorTool
+from backend.core.data_models import TestCase
 from datetime import datetime
 from dataclasses import dataclass
 from pprint import pprint
