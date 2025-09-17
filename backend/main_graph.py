@@ -4,22 +4,16 @@ from core.workflow import create_qa_workflow, export_test_cases_to_json, generat
 
 
 async def main():
-    specification = """
-    Healthcare Patient Management System:
-    The system shall provide secure patient data management capabilities including:
-    - Patient registration and demographic data storage
-    - Medical history tracking with audit trails
-    - Integration with external laboratory systems
-    - HIPAA-compliant data encryption and access controls
-    - Role-based authentication for healthcare providers
-    - Automated report generation for regulatory compliance
-    - Data backup and disaster recovery procedures
-    The system must comply with HIPAA, FDA 510(k) requirements for medical devices,
-    and implement IEC 62304 software lifecycle processes.
+    requirement = """
+    The system shall provide patients and healthcare providers the ability to book, 
+    reschedule, and cancel appointments. Automated reminders must be sent via SMS/email 
+    to patients and staff prior to scheduled appointments. The schedule must reflect 
+    real-time availability and prevent double-booking of resources 
+    (doctors, rooms, equipment).
     """
     initial_state = QAState(
-        specification=specification,
-        regulatory_requirements=["HIPAA", "FDA_510K", "IEC_62304"] # from the frontend it should change
+        requirement=requirement,
+        regulatory_requirements=["FDA"] # TODO: it should be captured from the frontend
     )
     workflow = create_qa_workflow()
     print("Starting Healthcare QA Automation Workflow...")
@@ -30,6 +24,7 @@ async def main():
         final_state = QAState(**final_state)
 
         print(f"Generated {len(final_state.test_cases)} test cases")
+        print(final_state)
         # print(f"Performed {len(final_state.compliance_results)} compliance checks")
         # print("\nSample Test Cases:")
         # for i, tc in enumerate(final_state.test_cases[:3]):

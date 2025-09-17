@@ -4,10 +4,13 @@ from agents.compliance_checker import ComplianceCheckAgent
 from agents.orchestrator import OrchestratorAgent
 from agents.testcase_generator import TestCaseGeneratorAgent
 from core.data_models import QAState
-from langchain_openai import ChatOpenAI
+# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_vertexai import ChatVertexAI
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 def finalize_workflow(state: QAState) -> QAState:
     state.current_step = "complete"
@@ -76,7 +79,9 @@ def export_test_cases_to_json(state: QAState) -> str:
     return json.dumps(export_data, indent=2)
 
 def create_qa_workflow():
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatVertexAI(
+        model="gemini-2.5-flash", 
+    )                              
     orchestrator = OrchestratorAgent(llm)
     test_generator = TestCaseGeneratorAgent(llm)
     compliance_checker = ComplianceCheckAgent(llm)
@@ -87,7 +92,7 @@ def create_qa_workflow():
     workflow.add_node("finalize", finalize_workflow)
     workflow.set_entry_point("orchestrator")
     workflow.add_edge("orchestrator", "test_generator")
-    workflow.add_edge("test_generator", "finalize") # changed to finalize , change it back
+    # workflow.add_edge("test_generator", "finalize") # changed to finalize , change it back
     # workflow.add_edge("compliance_checker", "finalize")
-    workflow.add_edge("finalize", END)
+    workflow.add_edge("test_generator", END)
     return workflow.compile()

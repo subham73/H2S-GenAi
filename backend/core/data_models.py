@@ -3,21 +3,62 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 import uuid
+from pydantic import BaseModel, Field
 
+######
+class FunctionalAreas(BaseModel):
+    modules: List[str] = Field(default_factory=list)
+    workflows: List[str] = Field(default_factory=list)
+    use_cases: List[str] = Field(default_factory=list)
 
-@dataclass
-class TestCase:
-    id: str
-    title: str
-    description: str
-    preconditions: List[str]
-    steps: List[Dict[str, str]]
-    expected_results: List[str]
-    priority: str
-    regulatory_tags: List[str]
-    traceability_id: str
-    created_at: datetime
-    compliance_status: Optional[str] = None
+class SecurityConsiderations(BaseModel):
+    data_protection: Optional[str] = ""
+    user_authentication: Optional[str] = ""
+    authorization: Optional[str] = ""
+    access_control: Optional[str] = ""
+    logging: Optional[str] = ""
+    incident_detection: Optional[str] = ""
+
+class ComplianceRequirements(BaseModel):
+    regulations: List[str] = Field(default_factory=list)
+    compliance_measures: Dict[str, str] = Field(default_factory=dict)
+    auditability: Optional[str] = ""
+
+class DataHandling(BaseModel):
+    data_entities: List[str] = Field(default_factory=list)
+    data_collection: Optional[str] = ""
+    data_storage: Optional[str] = ""
+    data_transmission: Optional[str] = ""
+    retention_policy: Optional[str] = ""
+    backup_policy: Optional[str] = ""
+    deletion_policy: Optional[str] = ""
+
+class OtherCriticalAspects(BaseModel):
+    interoperability: Optional[str] = ""
+    integration: Optional[str] = ""
+    performance: Optional[str] = ""
+    scalability: Optional[str] = ""
+    usability: Optional[str] = ""
+    monitoring: Optional[str] = ""
+
+class RequirementAnalysis(BaseModel):
+    functional_areas: FunctionalAreas = FunctionalAreas()
+    security_considerations: SecurityConsiderations = SecurityConsiderations()
+    compliance_requirements: ComplianceRequirements = ComplianceRequirements()
+    data_handling: DataHandling = DataHandling()
+    other_critical_aspects: OtherCriticalAspects = OtherCriticalAspects()
+######
+
+class TestCase(BaseModel):
+    id: str = Field(..., description="Unique identifier for the test case")
+    title: str = Field(..., description="Title of the test case")
+    description: str = Field(..., description="Detailed description of what the test case verifies")
+    preconditions: List[str] = Field(default_factory=list, description="Preconditions to be met before running the test")
+    steps: List[str] = Field(default_factory=list, description="Step-by-step actions to perform the test")
+    expected_results: List[str] = Field(default_factory=list, description="Expected outcomes from the test steps")
+    priority: str = Field(..., description="Priority level of the test case, e.g., High, Medium, Low")
+    regulatory_tags: Optional[List[str]] = Field(default_factory=list, description="Applicable regulatory standards or tags")
+    traceability_id: Optional[str] = Field("", description="Traceability reference to requirements or features")
 
 @dataclass
 class ComplianceResult:
@@ -29,8 +70,9 @@ class ComplianceResult:
     risk_level: str
 
 @dataclass
-class QAState:
-    specification: str = "" # TODO : change name of it to somehting else
+class QAState: # TODO : change it to pydantic model later
+    requirement: str = "" 
+    requirement_analysis: Optional[RequirementAnalysis] = None
     regulatory_requirements: List[str] = field(default_factory=list)
     current_step: str = "orchestration"
     messages: List[BaseMessage] = field(default_factory=list)
