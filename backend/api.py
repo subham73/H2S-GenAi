@@ -26,10 +26,11 @@ async def run_workflow(req: RequirementRequest):
             requirement=req.requirement,
             regulatory_requirements=req.regulatory_requirements
         )
-        # workflow = create_qa_workflow()
-        # final_state = await workflow.ainvoke(initial_state)
-        dummy_final_state = QAState(**sample_qastate)
-        return dummy_final_state.model_dump()
+        workflow = create_qa_workflow()
+        final_state = await workflow.ainvoke(initial_state)
+        # dummy_final_state = QAState(**sample_qastate)
+        # return dummy_final_state.model_dump()
+        return final_state.model_dump()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
