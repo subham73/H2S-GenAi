@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from backend.core.data_models import QAState, sample_qastate
+from backend.core.data_models import QAState, sample_test_compliance
 from backend.core.workflow import create_qa_workflow
 import uvicorn
 import os
@@ -26,11 +26,11 @@ async def run_workflow(req: RequirementRequest):
             requirement=req.requirement,
             regulatory_requirements=req.regulatory_requirements
         )
-        workflow = create_qa_workflow()
-        final_state = await workflow.ainvoke(initial_state)
-        # dummy_final_state = QAState(**sample_qastate)
+        # workflow = create_qa_workflow()
+        # final_state = await workflow.ainvoke(initial_state)
+        dummy_final_state = sample_test_compliance
         # return dummy_final_state.model_dump()
-        return final_state.model_dump()
+        return sample_test_compliance
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

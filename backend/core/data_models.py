@@ -132,83 +132,168 @@ HEALTHCARE_REGULATIONS = {
 from datetime import datetime
 from uuid import uuid4
 
-sample_qastate = {
-    "requirement": "The system shall allow patients to book, reschedule, and cancel appointments with automated reminders.",
-    "requirement_analysis": {
-        "functional_areas": {
-            "modules": ["Appointment Management", "Notification Service"],
-            "workflows": ["Booking Workflow", "Cancellation Workflow"],
-            "use_cases": ["Book appointment", "Cancel appointment", "Reschedule appointment"]
-        },
-        "security_considerations": {
-            "data_protection": "Encrypt patient data at rest and in transit",
-            "user_authentication": "OAuth2 with MFA",
-            "authorization": "Role-based access control",
-            "access_control": "Granular permissions per module",
-            "logging": "Audit logs for all booking changes",
-            "incident_detection": "Automated anomaly detection on booking patterns"
-        },
-        "compliance_requirements": {
-            "regulations": ["HIPAA", "FDA"],
-            "compliance_measures": {
-                "HIPAA": "Ensure PHI is encrypted and access logged",
-                "FDA": "Maintain audit trails for all scheduling changes"
-            },
-            "auditability": "All actions timestamped and traceable"
-        },
-        "data_handling": {
-            "data_entities": ["Patient", "Appointment", "Doctor", "Room"],
-            "data_collection": "Collected via secure web forms",
-            "data_storage": "Encrypted database with daily backups",
-            "data_transmission": "TLS 1.3 for all API calls",
-            "retention_policy": "Retain appointment data for 7 years",
-            "backup_policy": "Daily incremental backups, weekly full backups",
-            "deletion_policy": "Secure deletion after retention period"
-        },
-        "other_critical_aspects": {
-            "interoperability": "HL7/FHIR integration with EMR",
-            "integration": "Integrates with SMS and email gateways",
-            "performance": "Under 2s response time for booking actions",
-            "scalability": "Supports up to 10,000 concurrent users",
-            "usability": "Mobile-first responsive design",
-            "monitoring": "Real-time health checks and alerting"
-        }
+sample_test_compliance = {
+  "test_cases": [
+    {
+      "id": "TC-001",
+      "title": "Patient Registration with Consent",
+      "description": "Verify that new patient registration requires capturing explicit consent for storing personal and medical data.",
+      "preconditions": ["System online", "Admin logged in"],
+      "steps": [
+        "Navigate to patient registration page",
+        "Enter demographic and medical details",
+        "Submit registration form"
+      ],
+      "expected_results": [
+        "System prompts for explicit patient consent before saving",
+        "Consent record stored with timestamp"
+      ],
+      "priority": "High",
+      "regulatory_tags": ["GDPR", "HIPAA"],
+      "traceability_id": "REQ-PR-001"
     },
-    "regulatory_requirements": ["HIPAA", "FDA"],
-    "current_step": "compliance_check",
-    "messages": [],  # Could contain LangChain BaseMessage objects
-    "test_cases": [
-        {
-            "id": "TC-001",
-            "title": "Book Appointment - Happy Path",
-            "description": "Verify that a patient can successfully book an appointment.",
-            "preconditions": ["User is logged in", "Doctor is available"],
-            "steps": [
-                "Navigate to booking page",
-                "Select doctor and time slot",
-                "Confirm booking"
-            ],
-            "expected_results": [
-                "Booking confirmation displayed",
-                "Reminder email sent"
-            ],
-            "priority": "High",
-            "regulatory_tags": ["HIPAA"],
-            "traceability_id": "REQ-001"
-        }
-    ],
-    "compliance_results": [
-        {
-            "test_case_id": "TC-001",
-            "regulation": "HIPAA",
-            "compliance_status": "Compliant",
-            "violations": [],
-            "recommendations": [],
-            "risk_level": "Low"
-        }
-    ],
-    "errors": [],
-    "workflow_complete": True,
-    "workflow_id": str(uuid4()),
-    "created_at": datetime.now().isoformat()
+    {
+      "id": "TC-002",
+      "title": "Vaccine Stock Audit Trail",
+      "description": "Ensure all stock movements (inbound, outbound, wastage) are logged with user identity, timestamp, and reason.",
+      "preconditions": ["System has vaccine stock records"],
+      "steps": [
+        "Perform stock entry",
+        "Perform vaccine issuance",
+        "Perform vaccine wastage disposal"
+      ],
+      "expected_results": [
+        "Each transaction has unique ID",
+        "Logs include user identity, timestamp, and justification"
+      ],
+      "priority": "High",
+      "regulatory_tags": ["WHO", "ISO 27001"],
+      "traceability_id": "REQ-STK-002"
+    },
+    {
+      "id": "TC-003",
+      "title": "Cold Chain Temperature Monitoring",
+      "description": "Verify system alerts when vaccine storage temperature exceeds 2–8°C range.",
+      "preconditions": ["Cold chain monitoring devices connected"],
+      "steps": [
+        "Simulate rise in temperature to 10°C",
+        "Check if alert notification is generated"
+      ],
+      "expected_results": [
+        "System generates high-priority alert",
+        "Alert logged and sent to responsible staff"
+      ],
+      "priority": "High",
+      "regulatory_tags": ["WHO"],
+      "traceability_id": "REQ-CC-003"
+    },
+    {
+      "id": "TC-004",
+      "title": "Role-Based Access for Medical Staff",
+      "description": "Ensure doctors can view and update patient vaccination records, but receptionists can only view, not update.",
+      "preconditions": ["Users created with roles: Doctor, Receptionist"],
+      "steps": [
+        "Login as Doctor and try updating vaccination record",
+        "Login as Receptionist and attempt the same update"
+      ],
+      "expected_results": [
+        "Doctor update succeeds",
+        "Receptionist update is denied with an error message"
+      ],
+      "priority": "Medium",
+      "regulatory_tags": ["HIPAA", "ISO 27001"],
+      "traceability_id": "REQ-SEC-004"
+    },
+    {
+      "id": "TC-005",
+      "title": "Data Retention & Deletion Policy",
+      "description": "Verify that vaccination records older than 10 years are anonymized or deleted according to retention policy.",
+      "preconditions": ["Database seeded with >10 year old records"],
+      "steps": [
+        "Run retention policy job",
+        "Inspect patient data older than 10 years"
+      ],
+      "expected_results": [
+        "Records older than 10 years are anonymized or deleted",
+        "Audit log entry created for each deletion"
+      ],
+      "priority": "Medium",
+      "regulatory_tags": ["GDPR", "HIPAA"],
+      "traceability_id": "REQ-DH-005"
+    }
+  ],
+  "compliance_results": [
+    {
+      "test_case_id": "TC-001",
+      "regulation": "GDPR",
+      "compliance_status": "Compliant",
+      "violations": [],
+      "recommendations": [],
+      "risk_level": "Low"
+    },
+    {
+      "test_case_id": "TC-001",
+      "regulation": "HIPAA",
+      "compliance_status": "Partial",
+      "violations": ["Consent form not encrypted at rest"],
+      "recommendations": ["Enable encryption for stored consent forms"],
+      "risk_level": "Medium"
+    },
+    {
+      "test_case_id": "TC-002",
+      "regulation": "WHO",
+      "compliance_status": "Compliant",
+      "violations": [],
+      "recommendations": [],
+      "risk_level": "Low"
+    },
+    {
+      "test_case_id": "TC-002",
+      "regulation": "ISO 27001",
+      "compliance_status": "Non-Compliant",
+      "violations": ["Audit logs not tamper-proof"],
+      "recommendations": ["Implement immutable logging with blockchain or WORM storage"],
+      "risk_level": "High"
+    },
+    {
+      "test_case_id": "TC-003",
+      "regulation": "WHO",
+      "compliance_status": "Compliant",
+      "violations": [],
+      "recommendations": [],
+      "risk_level": "Low"
+    },
+    {
+      "test_case_id": "TC-004",
+      "regulation": "HIPAA",
+      "compliance_status": "Compliant",
+      "violations": [],
+      "recommendations": [],
+      "risk_level": "Low"
+    },
+    {
+      "test_case_id": "TC-004",
+      "regulation": "ISO 27001",
+      "compliance_status": "Partial",
+      "violations": ["Receptionist access logs missing"],
+      "recommendations": ["Enable activity logging for all roles"],
+      "risk_level": "Medium"
+    },
+    {
+      "test_case_id": "TC-005",
+      "regulation": "GDPR",
+      "compliance_status": "Non-Compliant",
+      "violations": ["Records older than 10 years remain accessible with patient identifiers"],
+      "recommendations": ["Implement automatic anonymization for records beyond retention period"],
+      "risk_level": "High"
+    },
+    {
+      "test_case_id": "TC-005",
+      "regulation": "HIPAA",
+      "compliance_status": "Partial",
+      "violations": ["Audit log of deleted records not retained properly"],
+      "recommendations": ["Ensure deletion logs are immutable and retained for minimum 6 years"],
+      "risk_level": "Medium"
+    }
+  ]
 }
