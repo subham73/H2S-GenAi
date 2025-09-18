@@ -1,39 +1,35 @@
-steps:
-# Step 1: Build the Docker image
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Build Docker Image'
-  args:
-  - 'build'
-  - '-t'
-  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}'
-  - '.'
+# steps:
+# # Step 1: Build the Docker image
+# - name: 'gcr.io/cloud-builders/docker'
+#   id: 'Build Docker Image'
+#   args:
+#   - 'build'
+#   - '-t'
+#   - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}' # Replace h2s-artifact-repo with your Artifact Registry repo name
+#   - '.' # Build context is the current directory where Dockerfile is located
 
-# Step 2: Push the Docker image to Artifact Registry
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push Docker Image'
-  args:
-  - 'push'
-  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}'
+# # Step 2: Push the Docker image to Artifact Registry
+# - name: 'gcr.io/cloud-builders/docker'
+#   id: 'Push Docker Image'
+#   args:
+#   - 'push'
+#   - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}' # Replace h2s-artifact-repo
 
-# Step 3: Deploy the image to Cloud Run
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Deploy to Cloud Run'
-  args:
-  - 'run'
-  - 'deploy'
-  - 'cloud-build-service-accountt'
-  - '--image'
-  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}'
-  - '--region'
-  - 'europe-west1'
-  - '--allow-unauthenticated'
-  - '--service-account'
-  - 'cloud-build-service-accountt@erudite-realm-472100-k9.iam.gserviceaccount.com'
+# # Step 3: Deploy the image to Cloud Run
+# - name: 'gcr.io/cloud-builders/gcloud'
+#   id: 'Deploy to Cloud Run'
+#   args:
+#   - 'run'
+#   - 'deploy'
+#   - 'cloud-build-service-accountt' # Replace with your desired Cloud Run service name
+#   - '--image'
+#   - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}' # Replace h2s-artifact-repo
+#   - '--region'
+#   - 'europe-west1' # Choose your desired deployment region
+#   - '--allow-unauthenticated' # Adjust based on your authentication needs (e.g., --no-allow-unauthenticated for internal services)
+#   - '--service-account'
+#   - 'cloud-build-service-accountt@erudite-realm-472100-k9.iam.gserviceaccount.com' # Your Cloud Run service account
 
-images:
-- 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}'
+# images:
+# - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/h2s-artifact-repo/h2s-fastapi-app:${COMMIT_SHA}' # Replace h2s-artifact-repo
 
-# --- ADD THIS OPTIONS BLOCK ---
-options:
-  logging: GCS_ONLY # This tells Cloud Build to store logs in GCS
-  logsBucket: 'gs://h2s-build-logs' # Specify your desired logs bucket here

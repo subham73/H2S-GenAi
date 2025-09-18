@@ -1,0 +1,43 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to Cloud Run
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: erudite-realm-472100-k9
+        service_account_email: cloud-build-service-accountt@erudite-realm-472100-k9.iam.gserviceaccount.com
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Configure Docker for Artifact Registry
+      run: |
+        gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+    - name: Build Docker image
+      run: |
+        docker build -t europe-west1-docker.pkg.dev/erudite-realm-472100-k9/h2s-artifact-repo/h2s-fastapi-app:$GITHUB_SHA .
+
+    - name: Push Docker image
+      run: |
+        docker push europe-west1-docker.pkg.dev/erudite-realm-472100-k9/h2s-artifact-repo/h2s-fastapi-app:$GITHUB_SHA
+
+    - name: Deploy to Cloud Run
+      run: |
+        gcloud run deploy h2s-fastapi-app \
+          --image europe-west1-docker.pkg.dev/erudite-realm-472100-k9/h2s-artifact-repo/h2s-fastapi-app:$GITHUB_SHA \
+          --region europe-west1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --service-account cloud-build-service-accountt@erudite-realm-472100-k9.iam.gserviceaccount.com
