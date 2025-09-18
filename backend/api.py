@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from backend.core.data_models import QAState, sample_qastate
 from backend.core.workflow import create_qa_workflow
-
+import uvicorn
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,6 +11,9 @@ load_dotenv()
 
 
 app = FastAPI()
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))  # default 8080
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 class RequirementRequest(BaseModel):
     requirement: str
