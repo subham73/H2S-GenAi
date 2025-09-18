@@ -21,6 +21,9 @@ jobs:
         service_account_email: cloud-build-service-accountt@erudite-realm-472100-k9.iam.gserviceaccount.com
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
+    - name: Verify GCP Auth
+      run: gcloud auth list
+
     - name: Configure Docker for Artifact Registry
       run: |
         gcloud auth configure-docker europe-west1-docker.pkg.dev
