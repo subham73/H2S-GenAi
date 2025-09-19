@@ -30,10 +30,12 @@ async def run_workflow(req: RequirementRequest):
         # final_state = await workflow.ainvoke(initial_state)
         dummy_final_state = sample_test_compliance
         # return dummy_final_state.model_dump()
-        return sample_test_compliance
+        return dummy_final_state
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the QA Automation API"}
+
+

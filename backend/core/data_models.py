@@ -3,7 +3,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 import uuid
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 ######
 class FunctionalAreas(BaseModel):
@@ -63,10 +63,24 @@ class TestCase(BaseModel):
 class ComplianceResult(BaseModel):
     test_case_id: str
     regulation: str
+    compliance_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Score between 0 and 1")
     compliance_status: str
-    violations: List[str]
-    recommendations: List[str]
-    risk_level: str
+    recommendations: List[str] = Field(default_factory=list, description="Suggestions for improvement")
+    violations: List[str] = Field(default_factory=list, description="Detected compliance risks")
+    regulatory_citations: List[str] = Field(default_factory=list, description="Relevant regulatory references")
+
+    @model_validator(mode="after")
+    def infer_status_from_score(self) -> "ComplianceResult":
+        if self.compliance_score is not None and self.compliance_status is None:
+            if self.compliance_score >= 0.85:
+                self.compliance_status = "Compliant"
+            elif self.compliance_score >= 0.40:
+                self.compliance_status = "Partial"
+            else:
+                self.compliance_status = "Non-Compliant"
+        return self
+
+
 
 class QAState(BaseModel):
     requirement: str = ""
@@ -226,74 +240,84 @@ sample_test_compliance = {
     {
       "test_case_id": "TC-001",
       "regulation": "GDPR",
+      "compliance_score": 0.95,
       "compliance_status": "Compliant",
-      "violations": [],
       "recommendations": [],
-      "risk_level": "Low"
+      "violations": [],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-001",
       "regulation": "HIPAA",
+      "compliance_score": 0.65,
       "compliance_status": "Partial",
-      "violations": ["Consent form not encrypted at rest"],
       "recommendations": ["Enable encryption for stored consent forms"],
-      "risk_level": "Medium"
+      "violations": ["Consent form not encrypted at rest"],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-002",
       "regulation": "WHO",
+      "compliance_score": 0.90,
       "compliance_status": "Compliant",
-      "violations": [],
       "recommendations": [],
-      "risk_level": "Low"
+      "violations": [],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-002",
       "regulation": "ISO 27001",
+      "compliance_score": 0.30,
       "compliance_status": "Non-Compliant",
-      "violations": ["Audit logs not tamper-proof"],
       "recommendations": ["Implement immutable logging with blockchain or WORM storage"],
-      "risk_level": "High"
+      "violations": ["Audit logs not tamper-proof"],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-003",
       "regulation": "WHO",
+      "compliance_score": 0.92,
       "compliance_status": "Compliant",
-      "violations": [],
       "recommendations": [],
-      "risk_level": "Low"
+      "violations": [],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-004",
       "regulation": "HIPAA",
+      "compliance_score": 0.88,
       "compliance_status": "Compliant",
-      "violations": [],
       "recommendations": [],
-      "risk_level": "Low"
+      "violations": [],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-004",
       "regulation": "ISO 27001",
+      "compliance_score": 0.60,
       "compliance_status": "Partial",
-      "violations": ["Receptionist access logs missing"],
       "recommendations": ["Enable activity logging for all roles"],
-      "risk_level": "Medium"
+      "violations": ["Receptionist access logs missing"],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-005",
       "regulation": "GDPR",
+      "compliance_score": 0.25,
       "compliance_status": "Non-Compliant",
-      "violations": ["Records older than 10 years remain accessible with patient identifiers"],
       "recommendations": ["Implement automatic anonymization for records beyond retention period"],
-      "risk_level": "High"
+      "violations": ["Records older than 10 years remain accessible with patient identifiers"],
+      "regulatory_citations": []
     },
     {
       "test_case_id": "TC-005",
       "regulation": "HIPAA",
+      "compliance_score": 0.55,
       "compliance_status": "Partial",
-      "violations": ["Audit log of deleted records not retained properly"],
       "recommendations": ["Ensure deletion logs are immutable and retained for minimum 6 years"],
-      "risk_level": "Medium"
+      "violations": ["Audit log of deleted records not retained properly"],
+      "regulatory_citations": []
     }
   ]
 }
+
