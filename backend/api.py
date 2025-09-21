@@ -6,7 +6,7 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 from backend.test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
-from backend.bigQuery import client
+from backend.bigQuery import client, bigquery
 load_dotenv()
 
 

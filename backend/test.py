@@ -4,7 +4,7 @@ import requests
 from pydantic import BaseModel
 from backend.core.data_models import ComplianceResult, QAState, sample_test_compliance, TestCase
 import json 
-from backend.bigQuery import client
+from backend.bigQuery import client, bigquery
 import uuid
 
 
