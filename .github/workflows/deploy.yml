@@ -43,6 +43,7 @@ jobs:
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy h2s-fastapi-app \
+          --timeout 600s \
           --image europe-west1-docker.pkg.dev/erudite-realm-472100-k9/h2s-artifact-repo/h2s-fastapi-app:$GITHUB_SHA \
           --region europe-west1 \
           --platform managed \
