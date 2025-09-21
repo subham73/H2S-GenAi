@@ -47,6 +47,5 @@ jobs:
           --image europe-west1-docker.pkg.dev/erudite-realm-472100-k9/h2s-artifact-repo/h2s-fastapi-app:$GITHUB_SHA \
           --region europe-west1 \
           --platform managed \
-          --readiness-check-path=/healthz
           --allow-unauthenticated \
           --service-account cloud-build-service-accountt@erudite-realm-472100-k9.iam.gserviceaccount.com
