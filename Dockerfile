@@ -13,10 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ backend/
 COPY .env .env
 
-# Cloud Run expects the app on port 8080
+# Cloud Run expects the app on $PORT
 EXPOSE 8080
 
-# Use $PORT instead of hardcoded 8000
-# CMD ["uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "8080"]
-CMD exec uvicorn backend.api:app --host 0.0.0.0 --port $PORT
+CMD ["sh", "-c", "uvicorn backend.api:app --host 0.0.0.0 --port ${PORT:-8080}"]
 
