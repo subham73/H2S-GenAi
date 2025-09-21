@@ -64,21 +64,29 @@ class ComplianceResult(BaseModel):
     test_case_id: str
     regulation: str
     compliance_score: Optional[float] = Field(None, ge=0.0, le=1.0, description="Score between 0 and 1")
-    compliance_status: str
+    compliance_status: Optional[str] = Field(
+        None, description="Compliant | Partial | Non-Compliant | Needs human review"
+    )
     recommendations: List[str] = Field(default_factory=list, description="Suggestions for improvement")
     violations: List[str] = Field(default_factory=list, description="Detected compliance risks")
     regulatory_citations: List[str] = Field(default_factory=list, description="Relevant regulatory references")
 
     @model_validator(mode="after")
+    def normalize_fields(self) -> "ComplianceResult":
+      if self.compliance_score is None:
+          self.compliance_score = 0.0
+      return self 
+
+    @model_validator(mode="after")
     def infer_status_from_score(self) -> "ComplianceResult":
-        if self.compliance_score is not None and self.compliance_status is None:
-            if self.compliance_score >= 0.85:
-                self.compliance_status = "Compliant"
-            elif self.compliance_score >= 0.40:
-                self.compliance_status = "Partial"
-            else:
-                self.compliance_status = "Non-Compliant"
-        return self
+      if self.compliance_score is not None and self.compliance_status is None:
+          if self.compliance_score >= 0.85:
+              self.compliance_status = "Compliant"
+          elif self.compliance_score >= 0.40:
+              self.compliance_status = "Partial"
+          else:
+              self.compliance_status = "Non-Compliant"
+      return self
 
 
 
