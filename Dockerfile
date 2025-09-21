@@ -17,4 +17,5 @@ COPY .env .env
 EXPOSE 8080
 
 # Use $PORT instead of hardcoded 8000
-CMD ["uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "8080"]
+# CMD ["uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "uvicorn backend.api:app --host 0.0.0.0 --port ${PORT:-8080}"]
