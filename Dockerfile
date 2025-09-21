@@ -11,7 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy app code
 COPY backend/ backend/
-COPY .env .env
+# COPY .env .env
+
+ENV PYTHONPATH=/app
 
 # Cloud Run expects the app on $PORT
 EXPOSE 8080

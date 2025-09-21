@@ -6,6 +6,7 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 from backend.test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
+from backend.bigQuery import client
 load_dotenv()
 
 
@@ -78,8 +79,6 @@ async def read_root():
 #TODO : store the requirement specification . 
 
 
-from google.cloud import bigquery
-client = bigquery.Client()
 
 
 @app.get("/all_requirements")

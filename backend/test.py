@@ -4,15 +4,14 @@ import requests
 from pydantic import BaseModel
 from backend.core.data_models import ComplianceResult, QAState, sample_test_compliance, TestCase
 import json 
+from backend.bigQuery import client
+import uuid
+
 
 class RequirementRequest(BaseModel):
     requirement: str
     regulatory_requirements: List[str]
 
-import uuid
-from google.cloud import bigquery
-
-client = bigquery.Client()
 
 threshold_compliance_score = 0.7  # Example threshold
 
