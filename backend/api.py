@@ -5,7 +5,7 @@ from backend.core.workflow import create_qa_workflow
 import uvicorn
 import os
 from dotenv import load_dotenv
-from test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
+from backend.test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
 load_dotenv()
 
 
