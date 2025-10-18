@@ -4,14 +4,32 @@ from backend.core.data_models import QAState, sample_test_compliance, completeQA
 from backend.core.workflow import create_qa_workflow
 import uvicorn
 import os
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from backend.test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
 from backend.bigQuery import client, bigquery
 load_dotenv()
 
-
+def insert_requirement_analysis_placeholder(req_id: str):
+    query = """
+    INSERT INTO "erudite-realm-472100-k9.qa_dataset.ReqAnalysis" (requirement_id, analysis, status)
+    VALUES (@req_id, '{}', 'pending')
+    """
+    client.query(query, [
+        bigquery.ScalarQueryParameter("req_id", "STRING", req_id),
+    ])
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "https://qa-frontend-342923646426.us-central1.run.app", "https://medtestgen.web.app"],  # Or specify ["http://localhost:5173"] for stricter control
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))  # default 8080
     uvicorn.run(app, host="0.0.0.0", port=port)
@@ -58,6 +76,8 @@ async def generate_test_cases(req: RequirementRequest):
             regulatory_requirements=req.regulatory_requirements
         )
         req_id = insert_requirement(req) # get requrirement id and insert requirement to db
+        insert_requirement_analysis_placeholder(req_id) # insert placeholder for requirement analysis
+
         
         workflow = create_qa_workflow()
         final_state = await workflow.ainvoke(initial_state)
