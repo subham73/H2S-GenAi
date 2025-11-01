@@ -10,6 +10,7 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 
 def finalize_workflow(state: QAState) -> QAState:
