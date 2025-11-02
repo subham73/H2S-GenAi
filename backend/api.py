@@ -1,14 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from core.data_models import QAState, sample_test_compliance, completeQA
-from core.workflow import create_qa_workflow
+from backend.core.data_models import QAState, sample_test_compliance, completeQA
+from backend.core.workflow import create_qa_workflow
 import uvicorn
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
-from bigQuery import client, bigquery
-from core.workflow import publish_message, publish_issues_notificaiton, publish_requirements_notification
+from backend.test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
+from backend.bigQuery import client, bigquery
+from backend.core.workflow import publish_message, publish_issues_notificaiton, publish_requirements_notification
 load_dotenv()
 
 def insert_requirement_analysis_placeholder(req_id: str):
