@@ -10,8 +10,24 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from dotenv import load_dotenv
 import os
+from google.cloud import pubsub_v1
+import json
+import logging
 
 load_dotenv()
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# ----------------------------------------------------------------------------------------------
+# Reusable Pub/Sub Publisher
+# Initialize the client once and reuse it.
+# ----------------------------------------------------------------------------------------------
+try:
+    publisher = pubsub_v1.PublisherClient()
+except Exception as e:
+    publisher = None
+    logger.error(f"Could not initialize Pub/Sub publisher client: {e}")
 
 def finalize_workflow(state: QAState) -> QAState:
     state.current_step = "complete"
@@ -98,3 +114,62 @@ def create_qa_workflow():
     # workflow.add_edge("compliance_checker", "finalize")
     workflow.add_edge("test_generator", END)
     return workflow.compile()
+
+# ----------------------------------------------------------------------------------------------
+# Agent Integration Logic to trigger message publishing
+# ----------------------------------------------------------------------------------------------
+
+def publish_message(project_id, topic_name, data):
+    """
+    Publishes a JSON-formatted message to a specified Pub/Sub topic.
+
+    Args:
+        project_id (str): Your Google Cloud project ID.
+        topic_name (str): The name of the Pub/Sub topic.
+        data (dict): A dictionary to be sent as the message payload.
+    """
+    if not publisher:
+        logger.error("Publisher client is not available. Cannot publish message.")
+        return
+
+    topic_path = publisher.topic_path(project_id, topic_name)
+    
+    # Data must be a bytestring, so we encode the JSON data.
+    message_bytes = json.dumps(data).encode("utf-8")
+    
+    try:
+        # The publish() method returns a future.
+        future = publisher.publish(topic_path, message_bytes)
+        message_id = future.result()  # Wait for the publish to complete.
+        logger.info(f"Successfully published message {message_id} to topic '{topic_name}'.")
+    except Exception as e:
+        logger.error(f"Failed to publish message to topic '{topic_name}': {e}")
+
+def publish_requirements_notification(new_req_id: str):
+    """
+    Example of what the agent does after inserting a requirement into BigQuery.
+    """
+    GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID')
+    logger.info(f"Agent successfully inserted requirement {new_req_id} into BigQuery.")
+
+    # Now, publish a notification to trigger the JIRA Requirement sync
+    if GCP_PROJECT_ID:
+        message_payload = {"req_id": new_req_id}
+        publish_message(GCP_PROJECT_ID, "requirement-updates", message_payload)
+    else:
+        logger.error("GCP_PROJECT_ID not set. Cannot publish to Pub/Sub.")
+
+def publish_issues_notificaiton(new_issue_id):
+    """
+    Example of what the agent does after inserting an issue into BigQuery.
+    """
+    # ...existing agent logic to insert the issue ...
+    logger.info(f"Agent successfully inserted issue {new_issue_id} into BigQuery.")
+
+    # Now, publish a notification to trigger the JIRA defect creation
+    GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID')
+    if GCP_PROJECT_ID:
+        message_payload = {"issue_id": new_issue_id}
+        publish_message(GCP_PROJECT_ID, "test-failures", message_payload)
+    else:
+        logger.error("GCP_PROJECT_ID not set. Cannot publish to Pub/Sub.")            
