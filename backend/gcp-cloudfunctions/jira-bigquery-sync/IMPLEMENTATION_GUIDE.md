@@ -47,7 +47,7 @@ This guide provides a complete solution for implementing bidirectional synchroni
 
 ```powershell
 # Clone/Navigate to the project directory
-cd "d:\Automation\HealthCare_Hackathon_Project_GCP\jira-bigquery-sync"
+cd ".\backend\gcp-cloudfunctions\jira-bigquery-sync"
 
 # Run deployment script
 .\deploy.ps1 -ProjectId "your-gcp-project" `
@@ -322,7 +322,7 @@ After implementing the basic sync:
 ## Automatic actions for creating jira through bigquery_to_jira function
 
 1. An agent notifies on the trigger-topic "test-failures" where a test failure is detected.
-1. The create_jira_defect function is invoked as a result of the notification to topic "test-failures".
+1. The create_alm_defect function is invoked as a result of the notification to topic "test-failures".
 2. It reads the test_result_id from the message.
 3. It calls get_test_failure_details() to query BigQuery for all the details about that specific failure.
 4. If the failure is found, it calls create_defect_in_jira() to create a new "Bug" issue in our JIRA project with all the relevant details.
