@@ -12,7 +12,7 @@ This system provides bidirectional synchronization between JIRA and Google BigQu
    - `webhook-handler`: Handle JIRA webhooks for real-time sync
 
 2. **BigQuery Tables**
-   - `issues`: Store JIRA requirements and bugs (all the entire list of stories/bugs/features/requirements)
+   - `requirements`: Store JIRA requirements
    - `test_cases`: Generated test cases
    - `test_results`: Execution results
    - `compliance_reports`: HIPAA validation results

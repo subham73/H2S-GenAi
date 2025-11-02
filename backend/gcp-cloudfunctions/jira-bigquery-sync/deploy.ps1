@@ -66,7 +66,7 @@ gcloud functions deploy bigquery-to-jira `
   --runtime=python311 `
   --region=$Region `
   --source=. `
-  --entry-point=create_alm_defect `
+  --entry-point=create_jira_defect `
   --trigger=topic=test-failures `
   --set-env-vars="GCP_PROJECT_ID=$ProjectId,BIGQUERY_DATASET_ID=$DatasetId,JIRA_BASE_URL=$JiraBaseUrl,JIRA_USERNAME=$JiraUsername,JIRA_API_TOKEN=$JiraApiToken,JIRA_PROJECT_KEY=$JiraProjectKey" `
   --memory=512MB `
@@ -87,7 +87,7 @@ gcloud functions deploy manual-jira-sync `
   --runtime=python311 `
   --region=$Region `
   --source="..\jira_to_bigquery" `
-  --entry-point=sync_all_issues `
+  --entry-point=sync_all_requirements `
   --trigger=http `
   --allow-unauthenticated `
   --set-env-vars="GCP_PROJECT_ID=$ProjectId,BIGQUERY_DATASET_ID=$DatasetId,JIRA_BASE_URL=$JiraBaseUrl,JIRA_USERNAME=$JiraUsername,JIRA_API_TOKEN=$JiraApiToken" `

@@ -1,7 +1,7 @@
 # Healthcare Testing System - Implementation Guide
 ## JIRA-BigQuery Bidirectional Sync
 
-This guide provides a complete solution for implementing bidirectional synchronization between JIRA and Google BigQuery for the healthcare test case monitoring and execution system.
+This guide provides a complete solution for implementing bidirectional synchronization between JIRA and Google BigQuery for your healthcare test case monitoring and execution system.
 
 ## 🏗️ Architecture Overview
 
@@ -36,7 +36,7 @@ This guide provides a complete solution for implementing bidirectional synchroni
 
 2. **JIRA Setup**
    - Generate API Token
-   - Note JIRA base URL and project key
+   - Note your JIRA base URL and project key
    - Admin access to create webhooks
 
 3. **Local Environment**
@@ -47,14 +47,14 @@ This guide provides a complete solution for implementing bidirectional synchroni
 
 ```powershell
 # Clone/Navigate to the project directory
-cd ".\backend\gcp-cloudfunctions\jira-bigquery-sync"
+cd "d:\Automation\HealthCare_Hackathon_Project_GCP\jira-bigquery-sync"
 
 # Run deployment script
-.\deploy.ps1 -ProjectId "gcp-project" `
+.\deploy.ps1 -ProjectId "your-gcp-project" `
            -JiraBaseUrl "https://yourcompany.atlassian.net" `
            -JiraUsername "your-email@company.com" `
            -JiraApiToken "your-jira-api-token" `
-           -JiraProjectKey "HEALTHCARE"
+           -JiraProjectKey "HEALTH"
 ```
 
 # Deploy through shell script
@@ -80,7 +80,7 @@ Invoke-RestMethod -Uri "https://your-manual-sync-url" -Method Post
 
 1. **Trigger**: JIRA webhook on requirement create/update
 2. **Process**: Cloud Function extracts requirement data
-3. **Action**: Insert/Update in BigQuery issues table
+3. **Action**: Insert/Update in BigQuery requirements table
 4. **Notification**: Pub/Sub message for agent processing
 
 ### BigQuery → JIRA (Defect Creation)
@@ -90,6 +90,57 @@ Invoke-RestMethod -Uri "https://your-manual-sync-url" -Method Post
 3. **Action**: Cloud Function creates JIRA defect
 4. **Link**: Defect linked to original requirement
 
+## 📊 BigQuery vs PostgreSQL Decision
+
+**Recommendation: Stick with BigQuery**
+
+### Why BigQuery is Better for Your Use Case:
+
+✅ **Analytics & Reporting**
+- Built-in analytics for compliance reporting
+- Easy integration with Data Studio for dashboards
+- Time-series analysis for test execution trends
+
+✅ **AI/ML Integration**
+- Native integration with Vertex AI for agents
+- BigQuery ML for predictive analytics
+- Easy data export for model training
+
+✅ **Scalability**
+- Handles large volumes of test execution data
+- Automatic scaling without management
+- Cost-effective for analytical workloads
+
+✅ **GCP Ecosystem**
+- Seamless integration with Cloud Functions
+- Built-in security and compliance features
+- Native support for healthcare data standards
+
+### When to Consider PostgreSQL (Cloud SQL):
+
+❌ **Complex Transactions**: If you need ACID transactions
+❌ **Real-time Operations**: Sub-second response requirements
+❌ **Existing ORM Dependencies**: Heavy reliance on PostgreSQL-specific features
+
+### Migration Path (If Needed):
+
+For migration to PostgreSQL later:
+
+```sql
+-- Export from BigQuery
+EXPORT DATA OPTIONS(
+  uri='gs://your-bucket/healthcare_data/*.csv',
+  format='CSV',
+  overwrite=true,
+  header=true
+) AS
+SELECT * FROM `your-project.healthcare_testing.requirements`;
+
+-- Import to Cloud SQL PostgreSQL
+gcloud sql import csv your-instance gs://your-bucket/healthcare_data/requirements.csv \
+  --database=healthcare_testing \
+  --table=requirements
+```
 
 ## 🛠️ Implementation Details
 
@@ -236,7 +287,7 @@ gcloud functions logs read bigquery-to-jira --limit=50
 gcloud functions logs read jira-to-bigquery --limit=50
 
 # Test BigQuery connectivity
-gcloud query --project=your-project --use_legacy_sql=false "SELECT COUNT(*) FROM \`your-project.healthcare_testing.issues\`"
+gcloud query --project=your-project --use_legacy_sql=false "SELECT COUNT(*) FROM \`your-project.healthcare_testing.requirements\`"
 
 # Test JIRA API
 $headers = @{
@@ -271,7 +322,7 @@ After implementing the basic sync:
 ## Automatic actions for creating jira through bigquery_to_jira function
 
 1. An agent notifies on the trigger-topic "test-failures" where a test failure is detected.
-1. The create_alm_defect function is invoked as a result of the notification to topic "test-failures".
+1. The create_jira_defect function is invoked as a result of the notification to topic "test-failures".
 2. It reads the test_result_id from the message.
 3. It calls get_test_failure_details() to query BigQuery for all the details about that specific failure.
 4. If the failure is found, it calls create_defect_in_jira() to create a new "Bug" issue in our JIRA project with all the relevant details.
@@ -281,6 +332,6 @@ After implementing the basic sync:
 ## Automatic actions for creating bigquery requirement from jira webhooks using webhook handler
 1. The jira_webhook_handler function is invoked.
 2. If the event type is either issue_created or issue_updated, then handle_requirement_sync is invoked with issue metadata.
-3. handle_issue_sync handles syncing JIRA issue to BigQuery issues table using a MERGE statement.
-4. publish_issue_update is invoked for publishing to the pub/sub topic 'jira-updates' 
-5. The agents reading the issues update can be notified on this jira-updates topic to get the next actions done like creating the test cases and executing them, or they can read on issues table to see any updates and handle them accordingly.
+3. handle_requirement_sync handles syncing JIRA issue to BigQuery requirements table using a MERGE statement.
+4. publish_requirement_update is invoked for publishing to the pub/sub topic 'jira-updates' 
+5. The agents reading the requirement update can be notified on this jira-updates topic to get the next actions done like creating the test cases and executing them, or they can read on requirements table to see any updates and handle them accordingly.

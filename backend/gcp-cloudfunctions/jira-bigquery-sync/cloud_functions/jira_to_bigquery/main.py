@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
-DATASET_ID = os.getenv('BIGQUERY_DATASET_ID', 'healthcare_data')
+DATASET_ID = os.getenv('BIGQUERY_DATASET_ID', 'qa_dataset')
 JIRA_BASE_URL = os.getenv('JIRA_BASE_URL')
 JIRA_USERNAME = os.getenv('JIRA_USERNAME')
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN')
@@ -56,7 +56,7 @@ def jira_webhook_handler(request):
         
         # Process different event types
         if event_type in ['jira:issue_created', 'jira:issue_updated']:
-            return handle_issue_sync(issue)
+            return handle_req_sync(issue)
         
         # Ignore other event types
         return {'status': 'ignored'}, 200
@@ -65,58 +65,42 @@ def jira_webhook_handler(request):
         logger.error(f"Error processing webhook: {str(e)}")
         return {'error': str(e)}, 500
 
-def handle_issue_sync(issue):
+def handle_req_sync(issue):
     """
     Sync ALM issues to BigQuery issues table using a MERGE statement.
     """
     try:
         # Extract issue data
         issue_data = {
-            'issue_type': issue.get('fields', {}).get('issuetype', {}).get('name'),
-            'issue_id': issue.get('key'),
-            'title': issue.get('fields', {}).get('summary'),
-            'description': issue.get('fields', {}).get('description'),
-            'priority': issue.get('fields', {}).get('priority', {}).get('name'),
-            'status': issue.get('fields', {}).get('status', {}).get('name'),
-            'assignee': issue.get('fields', {}).get('assignee', {}).get('displayName') if issue.get('fields', {}).get('assignee') else None,
-            'created_date': parse_jira_date(issue.get('fields', {}).get('created')),
-            'updated_date': parse_jira_date(issue.get('fields', {}).get('updated')),
-            'sync_timestamp': datetime.utcnow().isoformat()
+            'req_id': issue.get('key'), # Unique identifier for the requirement
+            'req': issue.get('fields', {}).get('summary'), # The title of the requirement
+            # The description might contain multiple regulations. We'll treat it as a single-element array for now.
+            'regulations': [issue.get('fields', {}).get('description', '') or ''],
+            'ts': datetime.utcnow().isoformat()
         }
         
         # Use a MERGE statement for an atomic and efficient "upsert" operation.
         query = f"""
-        MERGE `{PROJECT_ID}.{DATASET_ID}.issues` T
-        USING (SELECT @issue_id AS issue_id) S
-        ON T.issue_id = S.issue_id
+        MERGE `{PROJECT_ID}.{DATASET_ID}.Requirement` T
+        USING (SELECT @req_id AS req_id) S
+        ON T.req_id = S.req_id
         WHEN MATCHED THEN
             UPDATE SET
-                issue_type = @issue_type,
-                title = @title,
-                description = @description,
-                priority = @priority,
-                status = @status,
-                assignee = @assignee,
-                updated_date = @updated_date,
-                sync_timestamp = @sync_timestamp,
-                issue_id = @issue_id
+                req = @req,
+                regulations = @regulations,
+                ts = @ts,
+                req_id = @req_id
         WHEN NOT MATCHED THEN
-            INSERT (issue_id, issue_type, title, description, priority, status, assignee, created_date, updated_date, sync_timestamp)
-            VALUES (@issue_id, @issue_type, @title, @description, @priority, @status, @assignee, @created_date, @updated_date, @sync_timestamp)
+            INSERT (req_id, req, regulations, ts)
+            VALUES (@req_id, @req, @regulations, @ts)
         """
         
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("issue_id", "STRING", issue_data['issue_id']),
-                bigquery.ScalarQueryParameter("issue_type", "STRING", issue_data['issue_type']),
-                bigquery.ScalarQueryParameter("title", "STRING", issue_data['title']),
-                bigquery.ScalarQueryParameter("description", "STRING", issue_data['description']),
-                bigquery.ScalarQueryParameter("priority", "STRING", issue_data['priority']),
-                bigquery.ScalarQueryParameter("status", "STRING", issue_data['status']),
-                bigquery.ScalarQueryParameter("assignee", "STRING", issue_data['assignee']),
-                bigquery.ScalarQueryParameter("created_date", "TIMESTAMP", issue_data['created_date']),
-                bigquery.ScalarQueryParameter("updated_date", "TIMESTAMP", issue_data['updated_date']),
-                bigquery.ScalarQueryParameter("sync_timestamp", "TIMESTAMP", issue_data['sync_timestamp']),
+                bigquery.ScalarQueryParameter("req_id", "STRING", issue_data['req_id']),
+                bigquery.ScalarQueryParameter("req", "STRING", issue_data['req']),
+                bigquery.ArrayQueryParameter("regulations", "STRING", issue_data['regulations']),
+                bigquery.ScalarQueryParameter("ts", "TIMESTAMP", issue_data['ts']),
             ]
         )
         
@@ -127,11 +111,11 @@ def handle_issue_sync(issue):
         # Publish to Pub/Sub for further processing
         publish_issue_update(issue_data)
         
-        logger.info(f"Successfully synced issue: {issue_data['issue_id']}")
-        return {'status': 'success', 'issue_id': issue_data['issue_id']}, 200
+        logger.info(f"Successfully synced requirement: {issue_data['req_id']}")
+        return {'status': 'success', 'req_id': issue_data['req_id']}, 200
 
     except Exception as e:
-        logger.error(f"Error syncing issue: {str(e)}")
+        logger.error(f"Error syncing requirement: {str(e)}")
         return {'error': str(e)}, 500
 
 def publish_issue_update(issue_data):
@@ -140,11 +124,10 @@ def publish_issue_update(issue_data):
     """
     message_data = {
         'event_type': 'issue_updated',
-        'issue_id': issue_data['issue_id'],
-        'issue_type': issue_data['issue_type'],
-        'title': issue_data['title'],
-        'description': issue_data['description'],
-        'timestamp': issue_data['sync_timestamp']
+        'req_id': issue_data['req_id'],
+        'req': issue_data['req'],
+        'regulations': issue_data['regulations'],
+        'ts': issue_data['ts'],
     }
     
     # Convert message to bytes
@@ -184,7 +167,7 @@ def sync_all_issues(request):
         logger.info(f"Target BQ Project: {PROJECT_ID}, Dataset: {DATASET_ID}")
         
         # Fetch all issues from ALM apps (JIRA for now)
-        jql = "project = HEALTHCARE"
+        jql = "project = HEALTHCARE and issuetype = Story"
         
         headers = {
             'Accept': 'application/json',
@@ -193,13 +176,12 @@ def sync_all_issues(request):
         
         auth = (JIRA_USERNAME, JIRA_API_TOKEN)
         
-        url = f"{JIRA_BASE_URL}/rest/api/3/search"
+        url = f"{JIRA_BASE_URL}/rest/api/3/search/jql"
         params = {
             'jql': jql,
             'maxResults': 1000,
             'fields': 'key,summary,description,priority,status,assignee,created,updated,issuetype'
-        }
-        
+        }        
         response = requests.get(url, headers=headers, auth=auth, params=params)
         response.raise_for_status()
         
@@ -208,7 +190,7 @@ def sync_all_issues(request):
         
         synced_count = 0
         for issue in issues:
-            handle_issue_sync(issue)
+            handle_req_sync(issue)
             synced_count += 1
         
         return {

@@ -27,6 +27,7 @@ echo "🚀 Deploying Healthcare Testing System..."
 # Create Pub/Sub topics
 echo "📢 Creating Pub/Sub topics..."
 gcloud pubsub topics create jira-updates --project=$GCP_PROJECT_ID || true
+gcloud pubsub topics create requirement-updates --project=$GCP_PROJECT_ID || true
 gcloud pubsub topics create test-failures --project=$GCP_PROJECT_ID || true
 
 # Deploy JIRA to BigQuery Cloud Function
@@ -50,9 +51,9 @@ gcloud functions deploy jira-to-bigquery \
 echo "🔙 Deploying BigQuery to JIRA sync function..."
 cd ../bigquery_to_jira
 
-# This function is deployed with --trigger-topic=test-failures. 
-# This means that whenever a message is published to the test-failures Pub/Sub topic, Google Cloud will invoke this function,
-# passing the message details inside the cloud_event object. Refer create_alm_defect function in main.py
+# This function is triggered by insert or update events in the BigQuery 'Issue' table.
+# When data is inserted or updated in the table, Eventarc invokes this function.
+# The event payload contains information about the change, which is used by create_alm_defect.
 gcloud functions deploy bigquery-to-jira \
   --gen2 \
   --runtime=python312 \
@@ -64,6 +65,52 @@ gcloud functions deploy bigquery-to-jira \
   --memory=512MB \
   --timeout=300s \
   --project=$GCP_PROJECT_ID
+
+# Deploy manual defect creation function from the same directory
+echo "🛠️ Deploying manual defect creation function..."
+gcloud functions deploy manual-defect-creation \
+  --gen2 \
+  --runtime=python312 \
+  --region=$REGION \
+  --source=. \
+  --entry-point=update_jira_from_test_results \
+  --trigger-http \
+  --allow-unauthenticated \
+  --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,BIGQUERY_DATASET_ID=$BIGQUERY_DATASET_ID,JIRA_BASE_URL=$JIRA_BASE_URL,JIRA_USERNAME=$JIRA_USERNAME,JIRA_API_TOKEN=$JIRA_API_TOKEN,JIRA_PROJECT_KEY=$JIRA_PROJECT_KEY" \
+  --memory=1GB \
+  --timeout=540s \
+  --project=$GCP_PROJECT_ID
+
+# Deploy BigQuery to JIRA Requirement Cloud Function
+echo "🔙 Deploying BigQuery to JIRA requirement sync function..."
+# This function is triggered by insert or update events in the BigQuery 'Requirement' table.
+gcloud functions deploy bigquery-to-jira-requirement \
+  --gen2 \
+  --runtime=python312 \
+  --region=$REGION \
+  --source=. \
+  --entry-point=create_alm_requirement \
+  --trigger-topic=requirement-updates \
+  --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,BIGQUERY_DATASET_ID=$BIGQUERY_DATASET_ID,JIRA_BASE_URL=$JIRA_BASE_URL,JIRA_USERNAME=$JIRA_USERNAME,JIRA_API_TOKEN=$JIRA_API_TOKEN,JIRA_PROJECT_KEY=$JIRA_PROJECT_KEY" \
+  --memory=512MB \
+  --timeout=300s \
+  --project=$GCP_PROJECT_ID
+
+# Deploy manual requirement creation function
+echo "🛠️ Deploying manual requirement creation function..."
+gcloud functions deploy manual-requirement-creation \
+  --gen2 \
+  --runtime=python312 \
+  --region=$REGION \
+  --source=. \
+  --entry-point=create_update_jira_from_requirement \
+  --trigger-http \
+  --allow-unauthenticated \
+  --set-env-vars="GCP_PROJECT_ID=$GCP_PROJECT_ID,BIGQUERY_DATASET_ID=$BIGQUERY_DATASET_ID,JIRA_BASE_URL=$JIRA_BASE_URL,JIRA_USERNAME=$JIRA_USERNAME,JIRA_API_TOKEN=$JIRA_API_TOKEN,JIRA_PROJECT_KEY=$JIRA_PROJECT_KEY" \
+  --memory=1GB \
+  --timeout=540s \
+  --project=$GCP_PROJECT_ID
+
 
 # Deploy manual sync function
 gcloud functions deploy manual-jira-sync \
@@ -85,18 +132,29 @@ cd ../..
 echo "📋 Getting function URLs..."
 WEBHOOK_URL=$(gcloud functions describe jira-to-bigquery --region=$REGION --project=$GCP_PROJECT_ID --format="value(serviceConfig.uri)")
 MANUAL_SYNC_URL=$(gcloud functions describe manual-jira-sync --region=$REGION --project=$GCP_PROJECT_ID --format="value(serviceConfig.uri)")
+MANUAL_DEFECT_URL=$(gcloud functions describe manual-defect-creation --region=$REGION --project=$GCP_PROJECT_ID --format="value(serviceConfig.uri)")
+MANUAL_REQ_URL=$(gcloud functions describe manual-requirement-creation --region=$REGION --project=$GCP_PROJECT_ID --format="value(serviceConfig.uri)")
 
 echo "✅ Deployment completed!"
 echo ""
 echo "🔗 URL to Configure JIRA webhook with:"
 echo "$WEBHOOK_URL"
 echo ""
-echo "🔄 Manual sync URL (for initial setup):"
+echo "🔄 Manual JIRA->BQ sync URL (for initial setup):"
 echo "$MANUAL_SYNC_URL"
+echo ""
+echo "🛠️ Manual BQ->JIRA defect creation URL (for reprocessing issues):"
+echo "$MANUAL_DEFECT_URL"
+echo ""
+echo "🛠️ Manual BQ->JIRA requirement creation URL (for reprocessing requirements):"
+echo "$MANUAL_REQ_URL"
 echo ""
 echo "📝 Next steps:"
 echo "1. JIRA webhook points to: $WEBHOOK_URL"
 echo "2. Enabled webhook events: Issue Created, Issue Updated"
-echo "3. Run initial sync: curl -X POST $MANUAL_SYNC_URL"
-echo "4. Test the bidirectional sync"
+echo "3. Run initial JIRA->BQ sync: curl -X POST $MANUAL_SYNC_URL"
+echo "4. To manually create defects for issues without one, run: curl -X POST $MANUAL_DEFECT_URL"
+echo "   (Pass {'issue_ids': ['id1']} to target specific issues)"
+echo "5. To manually sync requirements from BQ to JIRA, run: curl -X POST $MANUAL_REQ_URL"
+echo "   (Pass {'req_ids': ['REQ-1']} to target specific requirements)"
 echo ""
