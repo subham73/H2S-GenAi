@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from backend.test import RequirementRequest, insert_requirement, insert_test_cases, process_compliance_for_requirement
 from backend.bigQuery import client, bigquery
+from backend.core.workflow import publish_message, publish_issues_notificaiton, publish_requirements_notification
 load_dotenv()
 
 def insert_requirement_analysis_placeholder(req_id: str):
@@ -29,10 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # default 8080
-    uvicorn.run(app, host="0.0.0.0", port=port)
 
 @app.get("/healthz")
 def healthz():
@@ -176,6 +173,40 @@ async def get_issue(issue_id: str):
     rows = list(client.query(query, job_config=job_config).result())
     return [dict(row) for row in rows]
 
+@app.get("/sync_requirements/{req_id}")
+async def sync_requirements(req_id: str):
+    try:
+        publish_requirements_notification(req_id)
+        return {"Success": req_id}
+    except Exception as e:
+        return {"Failure": f"Failed to sync requirement: {str(e)}"}
+
+
+@app.get("/sync_issues/{issue_id}")
+async def sync_issues(issue_id: str):
+    try:
+        publish_issues_notificaiton(issue_id)
+        return {"Success": issue_id}
+    except Exception as e:
+        return {"Failure": f"Failed to sync issue: {str(e)}"}    
+
+# TODO - SYNC ALL ISSUES AND REQUIREMENTS AT ONCE
+# @app.get("/sync_all_issues")
+# async def sync_all_issues():
+#     try:
+#         publish_issues_notificaiton()
+#         return {"Success": "Synced all issues"}
+#     except Exception as e:
+#         return {"Failure": f"Failed to sync issues: {str(e)}"}    
+
+# @app.get("/sync_all_requirements")
+# async def sync_all_requirements():
+#     try:
+#         publish_requirements_notification()
+#         return {"Success": "Synced all requirements"}
+#     except Exception as e:
+#         return {"Failure": f"Failed to sync requirements: {str(e)}"}
+
 #TODO : necessary
 # @app.post("/requirements/{req_id}/check_compliance")
 # async def recheck_compliance(req_id: str):
@@ -191,3 +222,7 @@ async def get_issue(issue_id: str):
 #     regulatory_tags = rows[0]["regulatory_requirements"]
 #     process_compliance_for_requirement(req_id, regulatory_tags)
 #     return {"status": "rechecked", "req_id": req_id}
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))  # default 8080
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,4 +1,5 @@
-
 .venv/
 erudite-realm-472100-k9-5d79b1c4d9bb.json
 .env
+*__pycache__*
+*.pyc
